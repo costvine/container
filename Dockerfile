@@ -1,16 +1,8 @@
-# The commands in this file all run as 'root', whereas the container user is 'vscode'. That means
-# most automatic configuration attempted by the tools is applied to the wrong user, and thus will
-# be lost. Most people do not connect to a development container as 'root'.
-#
-# As it turns out, this suits us just fine, since we don't like the way most tools try to configure
-# themselves, and we prefer to do that oursevles; we have our own approach. But the disconnect
-# should be noted, and there are some subtle challenges that arise from this, including settting
-# ownership correctly on some installed files (see `chown` below).
-#
-# Changing the user to 'vscode' during installation would present its own challenges, and tends to
-# be discouraged in Docker lore. It takes a lot of work to get either approach right.
+# Codespaces and possibly other dev container hosts will run this container as 'vscode', while
+# Github Actions hosted runners will run it as 'root'. We try to make it work in both cases.
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
+
 ENV PYTHON_VERSION=3.12.9
 ENV NODE_VERSION=v22.14.0
 ENV PNPM_VERSION=9.15.8
@@ -28,6 +20,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 	rsync graphviz dnsutils gettext sqlite3 sqlite3-doc && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Save /root/.bashrc so we can restore it later.
+RUN cp -f /root/.bashrc /root/.bashrc.orig
 
 # Install Python using uv. Blink and you'll miss it. See https://docs.astral.sh/uv/ for details.
 ENV XDG_HOME=/home/vscode/.local
@@ -94,5 +89,8 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key ad
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Modify .bashrc. The script is not here--it must be present in the workspace for this to have any effect.
-RUN echo "source scripts/bash-include" >>/home/vscode/.bashrc
+# Update .bashrc. `scripts/bash-include` is not copied here--it must be present in the workspace when
+# the container is started for this to work. See the sample script in this repo for recommendations.
+RUN echo "source scripts/bash-include" >>/home/vscode/.bashrc && \
+	cp -f /root/.bashrc.orig /root/.bashrc && \
+	echo "source scripts/bash-include" >>/root/.bashrc
