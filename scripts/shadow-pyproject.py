@@ -1,70 +1,69 @@
 #!/usr/bin/env python
 
-# Read a package.json file and transform it for use in packaging cloud functions.
+# Read pyproject.toml and generate a complimentary package.json.
 
 import os
 import sys
+import tomlkit
+import tomlkit.items
 import json
-import yaml
 from typing import cast, Dict, Any
 
 
 def main() -> None:
-    if not os.path.exists("package.json"):
-        print("package.json not found", file=sys.stderr)
+    if not os.path.exists("pyproject.toml"):
+        print("pyproject.toml not found", file=sys.stderr)
         exit(1)
 
     try:
-        with open("package.json") as f:
-            jsproject = cast(Dict[str, Any], json.loads(f.read()))
+        with open("pyproject.toml") as f:
+            pyproject = cast(Dict[str, Any], tomlkit.parse(f.read()))
     except Exception as e:
-        print(f"Error reading package.json: {e}", file=sys.stderr)
+        print(f"Error reading pyproject.toml: {e}", file=sys.stderr)
         exit(1)
 
-    if not "REPO_ROOT" in os.environ:
-        print("Environment variable REPO_ROOT is not set", file=sys.stderr)
-        exit(1)
-
-    REPO_ROOT = os.environ["REPO_ROOT"]
-    workspace_file = os.path.join(REPO_ROOT, "pnpm-workspace.yaml")
-    if not os.path.exists(workspace_file):
-        print(f"pnpm workspace configuration file {workspace_file} not found", file=sys.stderr)
-        exit(1)
-
+    # Check if pyproject.toml contains poetry section
     try:
-        with open(workspace_file) as f:
-            catalog = cast(Dict[str, Any], yaml.safe_load(f.read()))["catalog"]
-    except Exception as e:
-        print(f"Error reading catalog from pnpm workspace configuration file {workspace_file}: {e}", file=sys.stderr)
+        poetry = pyproject["tool"]["poetry"]
+    except KeyError:
+        print("pyproject.toml does not contain a 'tool.poetry' section", file=sys.stderr)
         exit(1)
 
-    jsproject["name"] = jsproject["name"].replace("@costvine/", "")
+    # Check for costvine section
+    try:
+        costvine = pyproject["tool"]["costvine"]
+    except KeyError:
+        costvine = {}
 
-    if "type" in jsproject:
-        del jsproject["type"]
-    if "scripts" in jsproject:
-        del jsproject["scripts"]
-    if "devDependencies" in jsproject:
-        del jsproject["devDependencies"]
+    output_json = {}
 
-    if not "NODE_VERSION" in os.environ:
-        print("Environment variable NODE_VERSION is not set", file=sys.stderr)
-        exit(1)
+    output_json["name"] = poetry["name"]
+    output_json["version"] = poetry["version"]
+    output_json["description"] = poetry["description"]
+    output_json["type"] = "module"
+    if "author" in poetry:
+        output_json["author"] = poetry["author"]
+    if "authors" in poetry:
+        output_json["contributors"] = poetry["authors"]
+    if "license" in poetry:
+        output_json["license"] = poetry["license"]
+    output_json["private"] = True
 
-    jsproject["engines"] = {"node": os.environ["NODE_VERSION"].split(".")[0], "pnpm": ">=9"}
-    jsproject["main"] = "index.cjs"
+    output_json["scripts"] = {}
+    if "scripts" in costvine:
+        scripts = costvine["scripts"]
+        for scriptname in scripts:
+            output_json["scripts"][scriptname] = scripts[scriptname]
 
-    pathedDependencies = {}
-    for dep in jsproject["dependencies"].keys():
-        if not dep.startswith("@costvine/"):
-            version = jsproject["dependencies"][dep]
-            if version == "catalog:":
-                version = catalog[dep]
-            pathedDependencies[dep] = version
+    output_json["dependencies"] = {}
+    if "dependencies" in poetry:
+        dependencies = poetry["dependencies"]
+        for depname in dependencies:
+            if type(dependencies[depname]) == tomlkit.items.InlineTable:
+                if "path" in dependencies[depname]:
+                    output_json["dependencies"][depname] = "workspace:^"
 
-    jsproject["dependencies"] = pathedDependencies
-
-    print(json.dumps(jsproject, indent="\t"))
+    print(json.dumps(output_json, indent="\t"))
 
 
 if __name__ == "__main__":

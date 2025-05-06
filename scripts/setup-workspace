@@ -1,18 +1,26 @@
 #!/bin/bash
 
-if [[ ! -z $CODESPACES ]]; then
-	echo "===> setup-workspace: Configuring VS Code for Python and Poetry"
+if [[ -z $CI ]]; then
+	echo "===> setup-workspace: Configuring Visual Studio Code for Python and Poetry"
 	if [[ ! -f $MACHINE_SETTINGS ]]; then
-		echo "===> setup-workspace: Creating $MACHINE_SETTINGS"
-		mkdir -p $MACHINE_SETTINGS_DIR
-		touch $MACHINE_SETTINGS
+		echo "===> setup-workspace: Waiting for $MACHINE_SETTINGS file to appear..."
+		waited=0
+		while [[ ! -f $MACHINE_SETTINGS && $waited -lt 60 ]]; do
+			sleep 1
+			waited=$((waited + 1))
+		done
 	fi
-	jq ". + { \"python.defaultInterpreterPath\": \"$WORKSPACE_PYTHON_DIR/bin/python\" }" $MACHINE_SETTINGS >/tmp/temp.json
-	mv -f /tmp/temp.json $MACHINE_SETTINGS
-	jq ". + { \"python.terminal.activateEnvironment\": false }" $MACHINE_SETTINGS >/tmp/temp.json
-	mv -f /tmp/temp.json $MACHINE_SETTINGS
-	jq ". + { \"python.venvPath\": \"$POETRY_CACHE_DIR/virtualenvs\" }" $MACHINE_SETTINGS >/tmp/temp.json
-	mv -f /tmp/temp.json $MACHINE_SETTINGS
+
+	if [[ ! -f $MACHINE_SETTINGS ]]; then
+		echo "===> setup-workspace: File still not found after 60 seconds. Skipping configuration."
+	else
+		jq ". + { \"python.defaultInterpreterPath\": \"$WORKSPACE_PYTHON_DIR/bin/python\" }" $MACHINE_SETTINGS >/tmp/temp.json
+		mv -f /tmp/temp.json $MACHINE_SETTINGS
+		jq ". + { \"python.terminal.activateEnvironment\": false }" $MACHINE_SETTINGS >/tmp/temp.json
+		mv -f /tmp/temp.json $MACHINE_SETTINGS
+		jq ". + { \"python.venvPath\": \"$POETRY_CACHE_DIR/virtualenvs\" }" $MACHINE_SETTINGS >/tmp/temp.json
+		mv -f /tmp/temp.json $MACHINE_SETTINGS
+	fi
 fi
 
 if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
@@ -26,9 +34,13 @@ echo "===> setup-workspace: Shadowing pyproject.toml files"
 shadow-pyproject
 
 echo "===> setup-workspace: Installing NPM dependencies (using pnpm)"
-pnpm install
+if [[ ! -z $CI ]]; then
+	pnpm install --ignore-scripts
+else
+	pnpm install
+fi
 
-if [[ ! -z $CODESPACES ]]; then
+if [[ -z $CI ]]; then
 	echo "===> setup-workspace: Syncing configuration from the tools package"
 	update-dotfiles
 	source scripts/bash-include

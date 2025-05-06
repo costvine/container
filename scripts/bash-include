@@ -1,11 +1,25 @@
 #!/bin/bash
 
+# Try to find the root of the repository.
+if [[ ! -z $CODESPACE_VSCODE_FOLDER ]]; then
+	export REPO_ROOT="$CODESPACE_VSCODE_FOLDER"
+elif [[ ! -z $GITHUB_WORKSPACE ]]; then
+	git config --global --add safe.directory $GITHUB_WORKSPACE
+	export REPO_ROOT="$GITHUB_WORKSPACE"
+else
+	export REPO_ROOT="$(git rev-parse --show-toplevel)"
+fi
+
 # Environment variables we depend on.
-export REPO_ROOT="$(git rev-parse --show-toplevel)"
 export WORKSPACE_ROOT="$(dirname $REPO_ROOT)"
 export GIT_BRANCH="$(git branch --show-current)"
-export GIT_USERNAME="$(git config --get user.name)"
-export GIT_USEREMAIL="$(git config --get user.email)"
+if [[ ! -z $GITHUB_ACTOR ]]; then
+	export GIT_USERNAME="$GITHUB_ACTOR"
+	export GIT_USEREMAIL=""
+else
+	export GIT_USERNAME="$(git config --get user.name)"
+	export GIT_USEREMAIL="$(git config --get user.email)"
+fi
 export MACHINE_SETTINGS_DIR="$HOME/.vscode-remote/data/Machine"
 export MACHINE_SETTINGS="$MACHINE_SETTINGS_DIR/settings.json"
 
@@ -26,6 +40,11 @@ export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CLOUD_CONFIG/application_default_
 if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
 	export GOOGLE_PROJECT="$(echo $GOOGLE_CREDENTIALS | jq -r .project_id)"
 	export GOOGLE_ACCOUNT="$(echo $GOOGLE_CREDENTIALS | jq -r .client_email)"
+fi
+
+# This causes ugly errors if not set.
+if [[ -z $NPM_TOKEN ]]; then
+	export NPM_TOKEN="Dammit, Jim, I'm a doctor, not an NPM token!"
 fi
 
 # Give function discovery a little more time to complete.
