@@ -1,5 +1,5 @@
 # Codespaces and possibly other dev container hosts will run this container as 'vscode', while
-# Github Actions hosted runners will run it as 'root'. We try to make it work in both cases.
+# Github Actions runners will run it as something else. We try to make it work in both cases.
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
@@ -90,7 +90,7 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key ad
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Update .bashrc. `scripts/bash-include` is not copied here--it must be present in the workspace when
-# the container is started for this to work. See the sample script in this repo for recommendations.
+# the container is started for this to work. See the sample script in this repo for details.
 RUN echo "source scripts/bash-include" >>/home/vscode/.bashrc && \
 	cp -f /root/.bashrc.orig /root/.bashrc && \
 	echo "source scripts/bash-include" >>/root/.bashrc
