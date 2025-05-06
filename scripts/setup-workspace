@@ -1,0 +1,44 @@
+#!/bin/bash
+
+if [[ ! -z $CODESPACES ]]; then
+	echo "===> setup-workspace: Configuring VS Code for Python and Poetry"
+	if [[ ! -f $MACHINE_SETTINGS ]]; then
+		echo "===> setup-workspace: Creating $MACHINE_SETTINGS"
+		mkdir -p $MACHINE_SETTINGS_DIR
+		touch $MACHINE_SETTINGS
+	fi
+	jq ". + { \"python.defaultInterpreterPath\": \"$WORKSPACE_PYTHON_DIR/bin/python\" }" $MACHINE_SETTINGS >/tmp/temp.json
+	mv -f /tmp/temp.json $MACHINE_SETTINGS
+	jq ". + { \"python.terminal.activateEnvironment\": false }" $MACHINE_SETTINGS >/tmp/temp.json
+	mv -f /tmp/temp.json $MACHINE_SETTINGS
+	jq ". + { \"python.venvPath\": \"$POETRY_CACHE_DIR/virtualenvs\" }" $MACHINE_SETTINGS >/tmp/temp.json
+	mv -f /tmp/temp.json $MACHINE_SETTINGS
+fi
+
+if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
+	echo "===> setup-workspace: Authenticating to Google Cloud"
+	mkdir -p $GOOGLE_CLOUD_CONFIG
+	echo $GOOGLE_CREDENTIALS >$GOOGLE_APPLICATION_CREDENTIALS
+	gcloud auth activate-service-account $GOOGLE_ACCOUNT --key-file=$GOOGLE_APPLICATION_CREDENTIALS --project=$GOOGLE_PROJECT
+fi
+
+echo "===> setup-workspace: Shadowing pyproject.toml files"
+shadow-pyproject
+
+echo "===> setup-workspace: Installing NPM dependencies (using pnpm)"
+pnpm install
+
+if [[ ! -z $CODESPACES ]]; then
+	echo "===> setup-workspace: Syncing configuration from the tools package"
+	update-dotfiles
+	source scripts/bash-include
+	normal-path
+fi
+
+echo "===> setup-workspace: Installing Python dependencies (using Poetry)"
+install-pyproject
+
+echo "===> setup-workspace: Installing patches"
+patch
+
+echo "===> setup-workspace: Setup complete"

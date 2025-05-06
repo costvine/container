@@ -1,0 +1,15 @@
+#!/bin/bash
+
+for dir in $(find $REPO_ROOT/packages -type d -not -regex .*/dist.* -not -regex .*/node_modules.* -not -regex ".*/\..*" -not -regex .*__pycache__.*)
+do
+    if [[ -f "${dir}/pyproject.toml" ]]; then
+        echo "shadow-pyproject: Found Python project in $dir"
+        cd $dir
+        voff
+        shadow-pyproject.py >package.json
+        if [[ $? -ne 0 ]]; then
+            echo "shadow-pyproject: Failed to shadow pyproject.toml"
+            exit 1
+        fi
+    fi
+done

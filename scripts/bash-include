@@ -1,0 +1,235 @@
+#!/bin/bash
+
+# Environment variables we depend on.
+export REPO_ROOT="$(git rev-parse --show-toplevel)"
+export WORKSPACE_ROOT="$(dirname $REPO_ROOT)"
+export GIT_BRANCH="$(git branch --show-current)"
+export GIT_USERNAME="$(git config --get user.name)"
+export GIT_USEREMAIL="$(git config --get user.email)"
+export MACHINE_SETTINGS_DIR="$HOME/.vscode-remote/data/Machine"
+export MACHINE_SETTINGS="$MACHINE_SETTINGS_DIR/settings.json"
+
+# Choose a suitable location for cached data that can survive container rebuilds.
+export CACHE_DIR="$WORKSPACE_ROOT/.cache"
+export POETRY_CACHE_DIR="$CACHE_DIR/poetry"
+export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
+
+# Extract some values from the FIREBASE environment variable.
+if [[ ! -z $FIREBASE ]]; then
+	export FIREBASE_PROJECT="$(echo $FIREBASE | jq -r .projectId)"
+	export FIREBASE_AUTH_DOMAIN="$(echo $FIREBASE | jq -r .authDomain)"
+fi
+
+# Configure gcloud as best we can.
+export GOOGLE_CLOUD_CONFIG="$HOME/.config/gcloud"
+export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CLOUD_CONFIG/application_default_credentials.json"
+if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
+	export GOOGLE_PROJECT="$(echo $GOOGLE_CREDENTIALS | jq -r .project_id)"
+	export GOOGLE_ACCOUNT="$(echo $GOOGLE_CREDENTIALS | jq -r .client_email)"
+fi
+
+# Give function discovery a little more time to complete.
+# https://github.com/firebase/firebase-tools/pull/7176
+export FUNCTIONS_DISCOVERY_TIMEOUT=60
+
+# Aliases
+alias poe='poetry'
+alias rep='cd $REPO_ROOT'
+alias pac='cd $REPO_ROOT/PACKAGES'
+
+function remove-node-from-path() {
+	PATH="$(perl -e 'print join(":", grep { not m|versions/node/| } split(/:/, $ENV{PATH}))')"
+	PATH="$(perl -e 'print join(":", grep { not m|nvm/current/| } split(/:/, $ENV{PATH}))')"
+}
+export -f remove-node-from-path
+
+function remove-python-from-path() {
+	PATH="$(perl -e 'print join(":", grep { not m|pyenv/| } split(/:/, $ENV{PATH}))')"
+	PATH="$(perl -e 'print join(":", grep { not m|python/| } split(/:/, $ENV{PATH}))')"
+	PATH="$(perl -e 'print join(":", grep { not m|/python| } split(/:/, $ENV{PATH}))')"
+	PATH="$(perl -e 'print join(":", grep { not m|poetry/virtualenvs/| } split(/:/, $ENV{PATH}))')"
+	PATH="$(perl -e 'print join(":", grep { not m|opt/conda/| } split(/:/, $ENV{PATH}))')"
+}
+export -f remove-python-from-path
+
+function remove-duplicates-from-path() {
+ 	PATH="$(perl -e 'print join(":", grep { not $seen{$_}++ } split(/:/, $ENV{PATH}))')"
+}
+export -f remove-duplicates-from-path
+
+function normal-path() {
+	remove-node-from-path
+	remove-python-from-path
+	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$WORKSPACE_PYTHON_DIR/bin:$POETRY_HOME/bin:$PATH"
+	remove-duplicates-from-path
+	export PATH
+	hash -r
+}
+export -f normal-path
+
+function venv-path() {
+	remove-node-from-path
+	remove-python-from-path
+	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$NVM_BIN:$VIRTUAL_ENV/bin:$POETRY_HOME/bin:$PATH"
+	remove-duplicates-from-path
+	export PATH
+	hash -r
+}
+export -f venv-path
+
+function update-dotfiles() {
+	shopt -s dotglob
+
+	echo "update-dotfiles: Installing dotfiles"
+	cp -rf $REPO_ROOT/node_modules/@costvine/tools/dotfiles/* $REPO_ROOT/ 2>/dev/null \
+		|| cp -rf $REPO_ROOT/packages/tools/dotfiles/* $REPO_ROOT/
+	mv -f $REPO_ROOT/gitavoid $REPO_ROOT/.gitignore
+	mv -f $REPO_ROOT/tsconfig-dot-json.json $REPO_ROOT/tsconfig.json
+	mv -f $REPO_ROOT/dot-npmrc $REPO_ROOT/.npmrc
+
+	if [[ -d $REPO_ROOT/local ]]; then
+		echo "update-dotfiles: Installing local dotfiles"
+		cp -rf $REPO_ROOT/local/* $REPO_ROOT/
+	fi
+
+	shopt -u dotglob
+	chmod +x $REPO_ROOT/scripts/*
+}
+export -f update-dotfiles
+
+function von() {
+	# Is this a Python project?
+	if [[ ! -f "pyproject.toml" ]]; then
+		echo "von: No Python project in this directory. Try running 'poetry init' first."
+		return
+	fi
+
+	# Determine the virtual environment directory (can be passed in as an argument).
+	if [[ -z $1 ]]; then
+		if [[ -v PREV_VENV_PWD ]]; then
+			voff
+		fi
+		local venv_dir=$(poetry env info --path 2>/dev/null)
+	else
+		local venv_dir=$1
+	fi
+
+	# Create the virtual environment if it doesn't already exist.
+	if [[ ! -d $venv_dir ]]; then
+		echo "von: The virtual environment for this project is missing. Creating it now."
+		poetry install
+		venv_dir=$(poetry env info --path 2>/dev/null)
+		if [[ -z $venv_dir ]]; then
+			echo "von: Failed to create the virtual environment."
+			return
+		fi
+	fi
+
+	local venv_bin="$venv_dir/bin/python"
+	local pyver=$($venv_bin --version | cut -d' ' -f2)
+	local pyver_nopatch=$(echo $pyver | cut -d. -f1,2)
+	local project=$(basename $PWD)
+
+	# echo "von: venv_bin=$venv_bin"
+	# echo "von: pyver=$pyver"
+	# echo "von: pyver_nopatch=$pyver_nopatch"
+	# echo "von: project=$project"
+
+	# Add the new environment to the PATH.
+	export VIRTUAL_ENV="$venv_dir"
+	PREV_VENV_PWD=$PWD
+	venv-path
+
+	# Set the prompt.
+	export VIRTUAL_ENV_PROMPT="($project-py$pyver_nopatch) "
+	if [[ ! -v FORMER_PROMPT ]]; then
+		FORMER_PROMPT="$PS1"
+	fi
+	export PS1="$VIRTUAL_ENV_PROMPT$FORMER_PROMPT"
+
+	# Remove some variables that might interfere with the virtual environment. These will not be restored.
+	unset PYTHONHOME
+	unset PYTHONPATH
+}
+export -f von
+
+function voff() {
+	# Remove any existing virtual environment.
+	if [[ -v VIRTUAL_ENV ]]; then
+		unset VIRTUAL_ENV
+	fi
+
+	# Put the PATH back to normal.
+	normal-path
+
+	# Restore the prompt.
+	if [[ -v FORMER_PROMPT ]]; then
+		export PS1="$FORMER_PROMPT"
+		unset FORMER_PROMPT
+	fi
+	if [[ -v VIRTUAL_ENV_PROMPT ]]; then
+		unset VIRTUAL_ENV_PROMPT
+	fi
+
+	# No longer in a virtual environment.
+	if [[ -v PREV_VENV_PWD ]]; then
+		unset PREV_VENV_PWD
+	fi
+}
+export -f voff
+
+function check-venv() {
+	# Same directory as the last time we checked?
+	if [[ -v PREV_PWD && $PREV_PWD == $PWD ]]; then
+		# echo "check-venv: Same directory as before."
+		return
+	fi
+
+	# Home directory of the active virtual environment?
+	if [[ -v PREV_VENV_PWD && $PREV_VENV_PWD == $PWD ]]; then
+		echo "check-venv: This is the home directory of the active virtual environment."
+		PREV_PWD=$PWD
+		return
+	fi
+
+	# Subdirectory of the active virtual environment?
+	if [[ -v PREV_VENV_PWD && $PWD == $PREV_VENV_PWD/* ]]; then
+		echo "check-venv: This is a subdirectory of the active virtual environment."
+		PREV_PWD=$PWD
+		return
+	fi
+
+	# Deactivate the previous virtual environment.
+	if [[ -v PREV_VENV_PWD ]]; then
+		echo "check-venv: Deactivating the virtual environment for $PREV_VENV_PWD."
+		voff
+	fi
+
+	# Check if there is a virtual environment for this project.
+	if [[ -f "pyproject.toml" ]]; then
+		local venv_dir=$(poetry env info --path 2>/dev/null)
+		if [[ -d $venv_dir ]]; then
+			echo "check-venv: There is a virtual environment for this project. Activating it now."
+			von $venv_dir
+		else
+			echo "check-venv: The virtual environment for this project is missing. Type 'von' to create it."
+		fi
+	fi
+
+	PREV_PWD=$PWD
+}
+export -f check-venv
+
+# Hooks
+# if [[ ! " ${chpwd_functions[*]} " =~ " check-venv " ]]; then
+#     chpwd_functions+=(check-venv)
+# fi
+if [[ ! "$PROMPT_COMMAND" =~ "check-venv" ]]; then
+	export PROMPT_COMMAND="check-venv;${PROMPT_COMMAND:-}"
+fi
+
+# Why does nvm have to be a function? Why is this script 5000 lines long?
+# source ${NVM_DIR}/nvm.sh
+
+# Now clean up the PATH.
+normal-path
