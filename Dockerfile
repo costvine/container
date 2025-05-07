@@ -58,9 +58,12 @@ RUN mkdir -p ${NVM_DIR} && \
 	wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash - && \
 	mkdir -p /home/vscode/.config/pnpm && \
 	echo 'store-dir=${PNPM_STORE_DIR}' >/home/vscode/.config/pnpm/rc && \
+	mkdir -p /root/.config/pnpm && \
+	echo 'store-dir=${PNPM_STORE_DIR}' >/root/.config/pnpm/rc && \
 	chown -R vscode:vscode ${NVM_DIR} && \
 	chown -R vscode:vscode ${PNPM_HOME} && \
 	chown -R vscode:vscode /home/vscode/.config/pnpm && \
+	chown -R root:root /root/.config/pnpm && \
 	rm -rf /tmp/* /var/tmp/*
 
 # Install Google Cloud SDK and Cloud Storage FUSE.
