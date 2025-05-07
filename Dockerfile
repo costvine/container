@@ -94,12 +94,9 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key ad
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Update .bashrc. `scripts/bash-include` is not copied here--it must be present in the workspace when
-# the container is started for this to work. This is necessary to configure the container correctly,
-# because important paths (such as the workspace root) can't be known in advance, however it requires
-# loading the script via a relative path, which could break in some rare edge cases. We could append
-# the contents of this script to .bashrc, but that would remove the flexibility provided by linking
-# to a script stored in the workspace at container startup, so we stick with this for now.
-RUN echo "source scripts/bash-include" >>/home/vscode/.bashrc && \
+# Update .bashrc. Do this for root as well, just in case.
+RUN COPY scripts/bash-include ${XDG_BIN_HOME} && \
+	chown vscode:vscode ${XDG_BIN_HOME}/bash-include 
+RUN echo "source $XDG_BIN_HOME/bash-include" >>/home/vscode/.bashrc && \
 	cp -f /root/.bashrc.orig /root/.bashrc && \
-	echo "source scripts/bash-include" >>/root/.bashrc
+	echo "source $XDG_BIN_HOME/bash-include" >>/root/.bashrc

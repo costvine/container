@@ -6,7 +6,7 @@ Costvine is a web app for creating heirarchical budgets of all kinds. It's targe
 
 This container is used both for development and for running CI/CD tasks at Costvine. This makes perfect sense to us, in terms of reproducibility, and saving duplication of effort. But it never seems to have occurred to Microsoft, and was maddeningly difficult to debug. The approach does work, however, and this example works well for us.
 
-There are some sample supporting scripts in the `scripts` folder, however these are not burned into the container--they're intended to be run from the workspace after the container is loaded. These represent a small fraction of the commands available in the Costvine Monorepo Tools.
+There are some sample supporting scripts in the `scripts` folder. These represent a small fraction of the commands available in the Costvine Monorepo Tools.
 
 ## Versions of Key Tools
 
