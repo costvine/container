@@ -44,10 +44,12 @@ RUN mkdir -p ${POETRY_HOME} && \
 	${XDG_BIN_HOME}/uv pip install --python ${POETRY_HOME} --upgrade pip setuptools && \
 	${XDG_BIN_HOME}/uv pip install --python ${POETRY_HOME} poetry==${POETRY_VERSION} && \
 	${POETRY_HOME}/bin/poetry self add poetry-plugin-export && \
+	${POETRY_HOME}/bin/poetry self lock && \
 	chown -R vscode:vscode ${POETRY_HOME} && \
 	rm -rf /tmp/* /var/tmp/*
 
-# Install nvm, node, npm, and pnpm, as sanely as possible.
+# Install nvm, node, npm, and pnpm, as sanely as possible. Any shell configuration will be lost
+# because we restore .bashrc, however we control the path explicitly in our runtime scripts.
 ENV NVM_DIR=/home/vscode/.nvm
 ENV NVM_BIN=${NVM_DIR}/versions/node/${NODE_VERSION}/bin
 ENV PNPM_HOME=/home/vscode/.local/share/pnpm
@@ -93,7 +95,11 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key ad
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Update .bashrc. `scripts/bash-include` is not copied here--it must be present in the workspace when
-# the container is started for this to work. See the sample script in this repo for details.
+# the container is started for this to work. This is necessary to configure the container correctly,
+# because important paths (such as the workspace root) can't be known in advance, however it requires
+# loading the script via a relative path, which could break in some rare edge cases. We could append
+# the contents of this script to .bashrc, but that would remove the flexibility provided by linking
+# to a script stored in the workspace at container startup, so we stick with this for now.
 RUN echo "source scripts/bash-include" >>/home/vscode/.bashrc && \
 	cp -f /root/.bashrc.orig /root/.bashrc && \
 	echo "source scripts/bash-include" >>/root/.bashrc
