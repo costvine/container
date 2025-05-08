@@ -6,8 +6,6 @@ Costvine is a web app for creating heirarchical budgets of all kinds. It's targe
 
 This container is used both for development and for running CI/CD tasks at Costvine. This makes perfect sense to us, in terms of reproducibility, and saving duplication of effort. But it never seems to have occurred to Microsoft, and was maddeningly difficult to debug. The approach does work, however, and this example works well for us.
 
-There are some sample supporting scripts in the `scripts` folder. These represent a small fraction of the commands available in the Costvine Monorepo Tools.
-
 ## Versions of Key Tools
 
 The versions of Python, Node, PNPM and Poetry are all controlled through environment variables set in the Dockerfile. Everything else is essentially the latest stable version at the time the container was built. This container is refreshed periodically.
