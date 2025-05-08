@@ -55,7 +55,7 @@ export FUNCTIONS_DISCOVERY_TIMEOUT=60
 # Aliases
 alias poe='poetry'
 alias rep='cd $REPO_ROOT'
-alias pac='cd $REPO_ROOT/PACKAGES'
+alias pac='cd $REPO_ROOT/packages'
 
 function remove-node-from-path() {
 	PATH="$(perl -e 'print join(":", grep { not m|versions/node/| } split(/:/, $ENV{PATH}))')"
