@@ -97,7 +97,7 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key ad
 # Update .bashrc. Do this for root as well, just in case.
 COPY scripts/bash-include ${XDG_BIN_HOME}
 RUN chown vscode:vscode ${XDG_BIN_HOME}/bash-include && \
-	chmod +x ${XDG_BIN_HOME}/bash-include
+	chmod +x ${XDG_BIN_HOME}/bash-include && \
 	echo "source $XDG_BIN_HOME/bash-include" >>/home/vscode/.bashrc && \
 	cp -f /root/.bashrc.orig /root/.bashrc && \
 	echo "source $XDG_BIN_HOME/bash-include" >>/root/.bashrc
