@@ -101,3 +101,6 @@ RUN chown vscode:vscode ${XDG_BIN_HOME}/bash-include && \
 	echo "source $XDG_BIN_HOME/bash-include" >>/home/vscode/.bashrc && \
 	cp -f /root/.bashrc.orig /root/.bashrc && \
 	echo "source $XDG_BIN_HOME/bash-include" >>/root/.bashrc
+
+# Try to get non-interactive shells to set up the environment as well.
+ENV BASH_ENV=${XDG_BIN_HOME}/bash-include
