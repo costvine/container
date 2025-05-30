@@ -4,6 +4,7 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 ENV PYTHON_VERSION=3.12.9
+ENV NVM_VERSION=v0.40.3
 ENV NODE_VERSION=v22.14.0
 ENV PNPM_VERSION=9.15.8
 ENV POETRY_VERSION=2.1.2
@@ -13,11 +14,11 @@ ENV POETRY_VERSION=2.1.2
 RUN export DEBIAN_FRONTEND=noninteractive && \
 	apt-get update && \
 	apt-get -y install --no-install-recommends \
-	curl wget git sudo jq nano man \
-	make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
-	xz-utils tk-dev libffi-dev liblzma-dev libxml2-dev libxmlsec1-dev \
-	libsqlite3-dev libncurses5-dev libncursesw5-dev \
-	rsync graphviz dnsutils gettext sqlite3 sqlite3-doc && \
+		curl wget git sudo jq nano man \
+		make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
+		xz-utils tk-dev libffi-dev liblzma-dev libxml2-dev libxmlsec1-dev \
+		libsqlite3-dev libncurses5-dev libncursesw5-dev \
+		rsync graphviz dnsutils gettext sqlite3 sqlite3-doc && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -54,7 +55,7 @@ ENV NVM_DIR=/home/vscode/.nvm
 ENV NVM_BIN=${NVM_DIR}/versions/node/${NODE_VERSION}/bin
 ENV PNPM_HOME=/home/vscode/.local/share/pnpm
 RUN mkdir -p ${NVM_DIR} && \
-	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \
+	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash && \
 	. ${NVM_DIR}/nvm.sh && \
 	nvm install ${NODE_VERSION} && \
 	wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.bashrc" SHELL="$(which bash)" bash - && \
