@@ -199,6 +199,9 @@ function voff() {
 export -f voff
 
 function check-venv() {
+	# Don't allow Python to be corrupted
+	unset PYTHONSTARTUP
+
 	# Same directory as the last time we checked?
 	if [[ -v PREV_PWD && $PREV_PWD == $PWD ]]; then
 		# echo "check-venv: Same directory as before."
