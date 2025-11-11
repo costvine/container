@@ -9,9 +9,9 @@ elif [[ ! -z $GITHUB_WORKSPACE ]]; then
 else
 	export REPO_ROOT="$(git rev-parse --show-toplevel)"
 fi
-
-# Environment variables we depend on.
 export WORKSPACE_ROOT="$(dirname $REPO_ROOT)"
+
+# Try to figure out the current Git branch.
 if [[ ! -z $GITHUB_BASE_REF ]]; then
 	export GIT_BRANCH="$GITHUB_BASE_REF"
 elif [[ ! -z $GITHUB_REF_NAME ]]; then
@@ -19,6 +19,8 @@ elif [[ ! -z $GITHUB_REF_NAME ]]; then
 else
 	export GIT_BRANCH="$(git branch --show-current)"
 fi
+
+# Try to figure out the Git username and email.
 if [[ ! -z $GITHUB_ACTOR ]]; then
 	export GIT_USERNAME="$GITHUB_ACTOR"
 	export GIT_USEREMAIL=""
@@ -40,7 +42,19 @@ export CACHE_DIR="$WORKSPACE_ROOT/.cache"
 export POETRY_CACHE_DIR="$CACHE_DIR/poetry"
 export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
 
-# Configure gcloud as best we can.
+# Extract some values from the Firebase client configuration.
+if [[ ! -z $FIREBASE ]]; then
+	echo "FIREBASE variable found."
+	echo "FIREBASE=$FIREBASE"
+	echo "FIREBASE projectId:"
+	echo $FIREBASE | jq -r .projectId
+	export FIREBASE_PROJECT="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .projectId)"
+	export FIREBASE_AUTH_DOMAIN="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .authDomain)"
+	echo "FIREBASE_PROJECT=$FIREBASE_PROJECT"
+	echo "FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN"
+fi
+
+# Extract some values from the Google Cloud configuration.
 export GOOGLE_CLOUD_CONFIG="$HOME/.config/gcloud"
 export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CLOUD_CONFIG/application_default_credentials.json"
 if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
