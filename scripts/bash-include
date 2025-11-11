@@ -26,7 +26,11 @@ else
 	export GIT_USERNAME="$(git config --get user.name)"
 	export GIT_USEREMAIL="$(git config --get user.email)"
 fi
-export MACHINE_SETTINGS_DIR="$HOME/.vscode-remote/data/Machine"
+if [[ -f $HOME/.vscode-remote/data/Machine/settings.json ]]; then
+	export MACHINE_SETTINGS_DIR="$HOME/.vscode-remote/data/Machine"
+else
+	export MACHINE_SETTINGS_DIR="$HOME/.vscode-server/data/Machine"
+fi
 export MACHINE_SETTINGS="$MACHINE_SETTINGS_DIR/settings.json"
 
 # Choose a suitable location for cached data that can survive container rebuilds.
