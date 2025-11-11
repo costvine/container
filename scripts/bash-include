@@ -1,5 +1,14 @@
 #!/bin/bash
 
+echo "bash-include: Setting up environment variables and functions"
+
+# Re-export environment-specific configuration variables, so they're available in subshells.
+export FIREBASE="$FIREBASE"
+export GEMINI_API_KEY="$GEMINI_API_KEY"
+export GOOGLE_CREDENTIALS="$GOOGLE_CREDENTIALS"
+export NETLIFY_AUTH_TOKEN="$NETLIFY_AUTH_TOKEN"
+export NPM_TOKEN="$NPM_TOKEN"
+
 # Try to find the root of the repository.
 if [[ ! -z $CODESPACE_VSCODE_FOLDER ]]; then
 	export REPO_ROOT="$CODESPACE_VSCODE_FOLDER"
@@ -41,13 +50,7 @@ export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
 # Extract some values from the FIREBASE environment variable.
 if [[ ! -z $FIREBASE ]]; then
 	export FIREBASE_PROJECT="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .projectId)"
-	if [[ $? -ne 0 ]]; then
-    	echo "bash-include: Error: Failed to parse 'projectId' from FIREBASE environment variable"
-	fi
 	export FIREBASE_AUTH_DOMAIN="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .authDomain)"
-	if [[ $? -ne 0 ]]; then
-		echo "bash-include: Error: Failed to parse 'authDomain' from FIREBASE environment variable"
-	fi
 fi
 
 # Configure gcloud as best we can.
@@ -55,13 +58,7 @@ export GOOGLE_CLOUD_CONFIG="$HOME/.config/gcloud"
 export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CLOUD_CONFIG/application_default_credentials.json"
 if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
 	export GOOGLE_PROJECT="$(echo $GOOGLE_CREDENTIALS | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .project_id)"
-	if [[ $? -ne 0 ]]; then
-		echo "bash-include: Error: Failed to parse 'project_id' from GOOGLE_CREDENTIALS environment variable"
-	fi
 	export GOOGLE_ACCOUNT="$(echo $GOOGLE_CREDENTIALS | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .client_email)"
-	if [[ $? -ne 0 ]]; then
-		echo "bash-include: Error: Failed to parse 'client_email' from GOOGLE_CREDENTIALS environment variable"
-	fi
 fi
 
 # Give function discovery a little more time to complete.
