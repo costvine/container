@@ -1,14 +1,5 @@
 #!/bin/bash
 
-echo "bash-include: Setting up environment variables and functions"
-
-# Re-export environment-specific configuration variables, so they're available in subshells.
-# export FIREBASE="$FIREBASE"
-# export GEMINI_API_KEY="$GEMINI_API_KEY"
-# export GOOGLE_CREDENTIALS="$GOOGLE_CREDENTIALS"
-# export NETLIFY_AUTH_TOKEN="$NETLIFY_AUTH_TOKEN"
-# export NPM_TOKEN="$NPM_TOKEN"
-
 # Try to find the root of the repository.
 if [[ ! -z $CODESPACE_VSCODE_FOLDER ]]; then
 	export REPO_ROOT="$CODESPACE_VSCODE_FOLDER"
@@ -35,7 +26,9 @@ else
 	export GIT_USERNAME="$(git config --get user.name)"
 	export GIT_USEREMAIL="$(git config --get user.email)"
 fi
-if [[ -f $HOME/.vscode-remote/data/Machine/settings.json ]]; then
+
+# Set the location of the machine settings file (holds options set at runtime).
+if [[ -f "$HOME/.vscode-remote/data/Machine/settings.json" ]]; then
 	export MACHINE_SETTINGS_DIR="$HOME/.vscode-remote/data/Machine"
 else
 	export MACHINE_SETTINGS_DIR="$HOME/.vscode-server/data/Machine"
@@ -47,25 +40,12 @@ export CACHE_DIR="$WORKSPACE_ROOT/.cache"
 export POETRY_CACHE_DIR="$CACHE_DIR/poetry"
 export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
 
-# Extract some values from the Firebase client configuration.
-if [[ ! -z $FIREBASE ]]; then
-	echo "FIREBASE variable found."
-	echo "FIREBASE=$FIREBASE"
-	export FIREBASE_PROJECT="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .projectId)"
-	export FIREBASE_AUTH_DOMAIN="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .authDomain)"
-	echo "FIREBASE_PROJECT=$FIREBASE_PROJECT"
-	echo "FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN"
-fi
-
 # Configure gcloud as best we can.
 export GOOGLE_CLOUD_CONFIG="$HOME/.config/gcloud"
 export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CLOUD_CONFIG/application_default_credentials.json"
 if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
-	echo "GOOGLE_CREDENTIALS variable found."
-	export GOOGLE_PROJECT="$(echo $GOOGLE_CREDENTIALS | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .project_id)"
-	export GOOGLE_ACCOUNT="$(echo $GOOGLE_CREDENTIALS | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .client_email)"
-	echo "GOOGLE_PROJECT=$GOOGLE_PROJECT"
-	echo "GOOGLE_ACCOUNT=$GOOGLE_ACCOUNT"
+	export GOOGLE_PROJECT="$(echo $GOOGLE_CREDENTIALS |jq -r .project_id)"
+	export GOOGLE_ACCOUNT="$(echo $GOOGLE_CREDENTIALS |jq -r .client_email)"
 fi
 
 # Give function discovery a little more time to complete.
