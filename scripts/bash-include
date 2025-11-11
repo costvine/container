@@ -36,16 +36,16 @@ export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
 
 # Extract some values from the FIREBASE environment variable.
 if [[ ! -z $FIREBASE ]]; then
-	export FIREBASE_PROJECT="$(echo $FIREBASE | jq -r .projectId)"
-	export FIREBASE_AUTH_DOMAIN="$(echo $FIREBASE | jq -r .authDomain)"
+	export FIREBASE_PROJECT="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .projectId)"
+	export FIREBASE_AUTH_DOMAIN="$(echo $FIREBASE | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .authDomain)"
 fi
 
 # Configure gcloud as best we can.
 export GOOGLE_CLOUD_CONFIG="$HOME/.config/gcloud"
 export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CLOUD_CONFIG/application_default_credentials.json"
 if [[ ! -z $GOOGLE_CREDENTIALS ]]; then
-	export GOOGLE_PROJECT="$(echo $GOOGLE_CREDENTIALS | jq -r .project_id)"
-	export GOOGLE_ACCOUNT="$(echo $GOOGLE_CREDENTIALS | jq -r .client_email)"
+	export GOOGLE_PROJECT="$(echo $GOOGLE_CREDENTIALS | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .project_id)"
+	export GOOGLE_ACCOUNT="$(echo $GOOGLE_CREDENTIALS | sed 's/\\n/ /g; s/\\t/ /g' | jq -r .client_email)"
 fi
 
 # Give function discovery a little more time to complete.
