@@ -3,11 +3,11 @@
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
-ENV PYTHON_VERSION=3.12.9
-ENV NVM_VERSION=v0.40.3
-ENV NODE_VERSION=v22.14.0
-ENV PNPM_VERSION=9.15.8
-ENV POETRY_VERSION=2.1.2
+ENV PYTHON_VERSION=3.14.3
+ENV NVM_VERSION=v0.40.4
+ENV NODE_VERSION=v22.22.2
+ENV PNPM_VERSION=10.33.0
+ENV POETRY_VERSION=2.3.3
 
 # Various packages, including tools and libraries needed to build things from source.
 # While this is sometimes necessary, at the moment we're not building anything from source here.
