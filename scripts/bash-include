@@ -178,6 +178,7 @@ function von() {
 	# Remove some variables that might interfere with the virtual environment. These will not be restored.
 	unset PYTHONHOME
 	unset PYTHONPATH
+	unset PYTHON_BASIC_REPL
 }
 export -f von
 
@@ -209,6 +210,7 @@ export -f voff
 function check-venv() {
 	# Don't allow Python to be corrupted
 	unset PYTHONSTARTUP
+	unset PYTHON_BASIC_REPL
 
 	# Same directory as the last time we checked?
 	if [[ -v PREV_PWD && $PREV_PWD == $PWD ]]; then
