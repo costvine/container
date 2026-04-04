@@ -42,12 +42,6 @@ export CACHE_DIR="$WORKSPACE_ROOT/.cache"
 export POETRY_CACHE_DIR="$CACHE_DIR/poetry"
 export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
 
-# If possible, extract some values from the Firebase Client configuration.
-if [[ ! -z $FIREBASE ]]; then
-	export FIREBASE_PROJECT="$(echo $FIREBASE |jq -r .projectId 2>/dev/null)"
-	export FIREBASE_AUTH_DOMAIN="$(echo $FIREBASE |jq -r .authDomain 2>/dev/null)"
-fi
-
 # If possible, extract some values from the Google Cloud configuration.
 export GOOGLE_CLOUD_CONFIG="$HOME/.config/gcloud"
 export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CLOUD_CONFIG/application_default_credentials.json"
