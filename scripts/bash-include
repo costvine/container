@@ -99,25 +99,29 @@ function venv-path() {
 }
 export -f venv-path
 
-function update-dotfiles() {
+function sync-dotfiles() {
 	shopt -s dotglob
 
-	echo "update-dotfiles: Installing dotfiles"
-	cp -rf $REPO_ROOT/node_modules/@costvine/tools/dotfiles/* $REPO_ROOT/ 2>/dev/null \
-		|| cp -rf $REPO_ROOT/packages/tools/dotfiles/* $REPO_ROOT/
-	mv -f $REPO_ROOT/gitavoid $REPO_ROOT/.gitignore
-	mv -f $REPO_ROOT/tsconfig-dot-json.json $REPO_ROOT/tsconfig.json
-	mv -f $REPO_ROOT/dot-npmrc $REPO_ROOT/.npmrc
-
-	if [[ -d $REPO_ROOT/local ]]; then
-		echo "update-dotfiles: Installing local dotfiles"
-		cp -rf $REPO_ROOT/local/* $REPO_ROOT/
+	echo "sync-dotfiles: Installing dotfiles"
+	if [[ -d "$REPO_ROOT/node_modules/@costvine/tools/dotfiles" ]]; then
+	    cp -rf "$REPO_ROOT/node_modules/@costvine/tools/dotfiles/"* "$REPO_ROOT/"
+	else
+	    cp -rf "$REPO_ROOT/packages/tools/dotfiles/"* "$REPO_ROOT/"
 	fi
 
+	if [[ -d "$REPO_ROOT/packages/local/dotfiles" ]]; then
+		echo "sync-dotfiles: Installing local dotfiles"
+		cp -rf "$REPO_ROOT/packages/local/dotfiles/"* "$REPO_ROOT/"
+	fi
+
+	mv -f "$REPO_ROOT/gitavoid" "$REPO_ROOT/.gitignore"
+	mv -f "$REPO_ROOT/tsconfig-dot-json.json" "$REPO_ROOT/tsconfig.json"
+	mv -f "$REPO_ROOT/dot-npmrc" "$REPO_ROOT/.npmrc"
+
 	shopt -u dotglob
-	chmod +x $REPO_ROOT/scripts/*
+	chmod +x "$REPO_ROOT/scripts/"*
 }
-export -f update-dotfiles
+export -f sync-dotfiles
 
 function von() {
 	# Is this a Python project?
