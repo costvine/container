@@ -263,4 +263,9 @@ fi
 # source ${NVM_DIR}/nvm.sh
 
 # Now clean up the PATH.
-normal-path
+if [[ -n $VIRTUAL_ENV && -d "$VIRTUAL_ENV/bin" ]]; then
+	venv-path
+else
+	normal-path
+fi
+
