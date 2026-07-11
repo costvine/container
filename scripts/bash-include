@@ -91,7 +91,7 @@ export -f normal-path
 function venv-path() {
 	remove-node-from-path
 	remove-python-from-path
-	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$NVM_BIN:$VIRTUAL_ENV/bin:$PATH"
+	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$VIRTUAL_ENV/bin:$PATH"
 	remove-duplicates-from-path
 	export PATH
 	hash -r
