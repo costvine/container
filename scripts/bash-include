@@ -40,6 +40,9 @@ export MACHINE_SETTINGS="$MACHINE_SETTINGS_DIR/settings.json"
 # Choose a suitable location for cached data that can survive container rebuilds.
 export CACHE_DIR="$WORKSPACE_ROOT/.cache"
 export UV_CACHE_DIR="$CACHE_DIR/uv"
+# All Python virtual environments are kept together here (see the venv-location
+# script); uv is pointed at them via UV_PROJECT_ENVIRONMENT.
+export VENV_CACHE_DIR="$CACHE_DIR/venvs"
 export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
 
 # If possible, extract some values from the Google Cloud configuration.
@@ -68,6 +71,7 @@ function remove-python-from-path() {
 	PATH="$(perl -e 'print join(":", grep { not m|pyenv/| } split(/:/, $ENV{PATH}))')"
 	PATH="$(perl -e 'print join(":", grep { not m|python/| } split(/:/, $ENV{PATH}))')"
 	PATH="$(perl -e 'print join(":", grep { not m|/python| } split(/:/, $ENV{PATH}))')"
+	PATH="$(perl -e 'print join(":", grep { not m|\.cache/venvs/| } split(/:/, $ENV{PATH}))')"
 	PATH="$(perl -e 'print join(":", grep { not m|/\.venv/| } split(/:/, $ENV{PATH}))')"
 	PATH="$(perl -e 'print join(":", grep { not m|opt/conda/| } split(/:/, $ENV{PATH}))')"
 }
@@ -130,12 +134,16 @@ function von() {
 	fi
 
 	# Determine the virtual environment directory (can be passed in as an argument).
-	# Virtual environments live in the package directory, like node_modules does.
+	# Virtual environments are kept together in $VENV_CACHE_DIR (see venv-location).
 	if [[ -z $1 ]]; then
 		if [[ -v PREV_VENV_PWD ]]; then
 			voff
 		fi
-		local venv_dir="$PWD/.venv"
+		local venv_dir=$(venv-location 2>/dev/null)
+		if [[ -z $venv_dir ]]; then
+			echo "von: Could not determine the virtual environment location."
+			return
+		fi
 	else
 		local venv_dir=$1
 	fi
@@ -143,7 +151,7 @@ function von() {
 	# Create the virtual environment if it doesn't already exist.
 	if [[ ! -d $venv_dir ]]; then
 		echo "von: The virtual environment for this project is missing. Creating it now."
-		uv sync
+		UV_PROJECT_ENVIRONMENT="$venv_dir" uv sync
 		if [[ ! -d $venv_dir ]]; then
 			echo "von: Failed to create the virtual environment."
 			return
@@ -162,6 +170,8 @@ function von() {
 
 	# Add the new environment to the PATH.
 	export VIRTUAL_ENV="$venv_dir"
+	# Point uv at the central venv so 'uv sync', 'uv add', etc. use it.
+	export UV_PROJECT_ENVIRONMENT="$venv_dir"
 	PREV_VENV_PWD=$PWD
 	venv-path
 
@@ -183,6 +193,9 @@ function voff() {
 	# Remove any existing virtual environment.
 	if [[ -v VIRTUAL_ENV ]]; then
 		unset VIRTUAL_ENV
+	fi
+	if [[ -v UV_PROJECT_ENVIRONMENT ]]; then
+		unset UV_PROJECT_ENVIRONMENT
 	fi
 
 	# Put the PATH back to normal.
@@ -237,7 +250,7 @@ function check-venv() {
 
 	# Check if there is a virtual environment for this project.
 	if [[ -f "pyproject.toml" ]]; then
-		local venv_dir="$PWD/.venv"
+		local venv_dir=$(venv-location 2>/dev/null)
 		if [[ -d $venv_dir ]]; then
 			echo "check-venv: There is a virtual environment for this project. Activating it now."
 			von $venv_dir
