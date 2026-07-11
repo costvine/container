@@ -70,10 +70,11 @@ RUN mkdir -p ${NVM_DIR} && \
 	rm -rf /tmp/* /var/tmp/*
 
 # Install Google Cloud SDK and Cloud Storage FUSE.
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+RUN mkdir -p /etc/apt/keyrings && \
+	curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /etc/apt/keyrings/cloud.google.gpg && \
 	export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s` && \
-	echo "deb https://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list && \
-	echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee /etc/apt/sources.list.d/google-cloud-sdk.list && \
+	echo "deb [signed-by=/etc/apt/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list && \
+	echo "deb [signed-by=/etc/apt/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee /etc/apt/sources.list.d/google-cloud-sdk.list && \
 	export DEBIAN_FRONTEND=noninteractive && \
 	apt-get update && \
 	apt-get -y install --no-install-recommends google-cloud-sdk fuse gcsfuse && \
@@ -86,9 +87,10 @@ RUN curl -s "https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy
 	chmod +x /usr/local/bin/cloud-sql-proxy
 
 # Install Postgres client.
-RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && \
+RUN mkdir -p /etc/apt/keyrings && \
+	curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/keyrings/postgresql.gpg && \
 	export POSTGRES_REPO=`lsb_release -c -s`-pgdg && \
-	echo "deb http://apt.postgresql.org/pub/repos/apt $POSTGRES_REPO main" | tee /etc/apt/sources.list.d/pgdg.list && \
+	echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt $POSTGRES_REPO main" | tee /etc/apt/sources.list.d/pgdg.list && \
 	export DEBIAN_FRONTEND=noninteractive && \
 	apt-get update && \
 	apt-get -y install --no-install-recommends postgresql-client && \
