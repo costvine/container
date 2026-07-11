@@ -85,7 +85,10 @@ export -f remove-duplicates-from-path
 function normal-path() {
 	remove-node-from-path
 	remove-python-from-path
-	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$WORKSPACE_PYTHON_DIR/bin:$PATH"
+	# XDG_BIN_HOME holds uv (and other user-level tools); it must be added
+	# explicitly for non-interactive shells such as CI, which do not get the
+	# interactive login PATH.
+	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$WORKSPACE_PYTHON_DIR/bin:$XDG_BIN_HOME:$PATH"
 	remove-duplicates-from-path
 	export PATH
 	hash -r
@@ -95,7 +98,7 @@ export -f normal-path
 function venv-path() {
 	remove-node-from-path
 	remove-python-from-path
-	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$VIRTUAL_ENV/bin:$PATH"
+	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$VIRTUAL_ENV/bin:$XDG_BIN_HOME:$PATH"
 	remove-duplicates-from-path
 	export PATH
 	hash -r
