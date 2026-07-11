@@ -7,7 +7,7 @@ ENV PYTHON_VERSION=3.13.12
 ENV NVM_VERSION=v0.40.4
 ENV NODE_VERSION=v22.22.2
 ENV PNPM_VERSION=10.33.0
-ENV POETRY_VERSION=2.3.3
+# ENV POETRY_VERSION=2.3.3
 
 # Various packages, including tools and libraries needed to build things from source.
 # While this is sometimes necessary, at the moment we're not building anything from source here.
@@ -39,15 +39,15 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL=${XDG_
 	rm -rf /tmp/* /var/tmp/*
 
 # Install Poetry. See https://python-poetry.org/docs/ for details.
-ENV POETRY_HOME=/home/vscode/.local/share/poetry
-RUN mkdir -p ${POETRY_HOME} && \
-	${XDG_BIN_HOME}/uv venv ${POETRY_HOME} && \
-	${XDG_BIN_HOME}/uv pip install --python ${POETRY_HOME} --upgrade pip setuptools && \
-	${XDG_BIN_HOME}/uv pip install --python ${POETRY_HOME} poetry==${POETRY_VERSION} && \
-	${POETRY_HOME}/bin/poetry self add poetry-plugin-export && \
-	${POETRY_HOME}/bin/poetry self lock && \
-	chown -R vscode:vscode ${POETRY_HOME} && \
-	rm -rf /tmp/* /var/tmp/*
+#ENV POETRY_HOME=/home/vscode/.local/share/poetry
+#RUN mkdir -p ${POETRY_HOME} && \
+#	${XDG_BIN_HOME}/uv venv ${POETRY_HOME} && \
+#	${XDG_BIN_HOME}/uv pip install --python ${POETRY_HOME} --upgrade pip setuptools && \
+#	${XDG_BIN_HOME}/uv pip install --python ${POETRY_HOME} poetry==${POETRY_VERSION} && \
+#	${POETRY_HOME}/bin/poetry self add poetry-plugin-export && \
+#	${POETRY_HOME}/bin/poetry self lock && \
+#	chown -R vscode:vscode ${POETRY_HOME} && \
+#	rm -rf /tmp/* /var/tmp/*
 
 # Install nvm, node, npm, and pnpm, as sanely as possible. Any shell configuration will be lost
 # because we restore .bashrc, however we control the path explicitly in our runtime scripts.

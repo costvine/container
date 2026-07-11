@@ -39,7 +39,7 @@ export MACHINE_SETTINGS="$MACHINE_SETTINGS_DIR/settings.json"
 
 # Choose a suitable location for cached data that can survive container rebuilds.
 export CACHE_DIR="$WORKSPACE_ROOT/.cache"
-export POETRY_CACHE_DIR="$CACHE_DIR/poetry"
+export UV_CACHE_DIR="$CACHE_DIR/uv"
 export PNPM_STORE_DIR="$CACHE_DIR/pnpm-store"
 
 # If possible, extract some values from the Google Cloud configuration.
@@ -55,7 +55,6 @@ fi
 export FUNCTIONS_DISCOVERY_TIMEOUT=60
 
 # Aliases
-alias poe='poetry'
 alias rep='cd $REPO_ROOT'
 alias pac='cd $REPO_ROOT/packages'
 
@@ -69,7 +68,7 @@ function remove-python-from-path() {
 	PATH="$(perl -e 'print join(":", grep { not m|pyenv/| } split(/:/, $ENV{PATH}))')"
 	PATH="$(perl -e 'print join(":", grep { not m|python/| } split(/:/, $ENV{PATH}))')"
 	PATH="$(perl -e 'print join(":", grep { not m|/python| } split(/:/, $ENV{PATH}))')"
-	PATH="$(perl -e 'print join(":", grep { not m|poetry/virtualenvs/| } split(/:/, $ENV{PATH}))')"
+	PATH="$(perl -e 'print join(":", grep { not m|/\.venv/| } split(/:/, $ENV{PATH}))')"
 	PATH="$(perl -e 'print join(":", grep { not m|opt/conda/| } split(/:/, $ENV{PATH}))')"
 }
 export -f remove-python-from-path
@@ -82,7 +81,7 @@ export -f remove-duplicates-from-path
 function normal-path() {
 	remove-node-from-path
 	remove-python-from-path
-	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$WORKSPACE_PYTHON_DIR/bin:$POETRY_HOME/bin:$PATH"
+	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$WORKSPACE_PYTHON_DIR/bin:$PATH"
 	remove-duplicates-from-path
 	export PATH
 	hash -r
@@ -92,7 +91,7 @@ export -f normal-path
 function venv-path() {
 	remove-node-from-path
 	remove-python-from-path
-	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$NVM_BIN:$VIRTUAL_ENV/bin:$POETRY_HOME/bin:$PATH"
+	PATH="$REPO_ROOT/scripts:$REPO_ROOT/node_modules/.bin:$PNPM_HOME:$NVM_BIN:$VIRTUAL_ENV/bin:$PATH"
 	remove-duplicates-from-path
 	export PATH
 	hash -r
@@ -126,16 +125,17 @@ export -f sync-dotfiles
 function von() {
 	# Is this a Python project?
 	if [[ ! -f "pyproject.toml" ]]; then
-		echo "von: No Python project in this directory. Try running 'poetry init' first."
+		echo "von: No Python project in this directory. Try running 'uv init' first."
 		return
 	fi
 
 	# Determine the virtual environment directory (can be passed in as an argument).
+	# Virtual environments live in the package directory, like node_modules does.
 	if [[ -z $1 ]]; then
 		if [[ -v PREV_VENV_PWD ]]; then
 			voff
 		fi
-		local venv_dir=$(poetry env info --path 2>/dev/null)
+		local venv_dir="$PWD/.venv"
 	else
 		local venv_dir=$1
 	fi
@@ -143,9 +143,8 @@ function von() {
 	# Create the virtual environment if it doesn't already exist.
 	if [[ ! -d $venv_dir ]]; then
 		echo "von: The virtual environment for this project is missing. Creating it now."
-		poetry install
-		venv_dir=$(poetry env info --path 2>/dev/null)
-		if [[ -z $venv_dir ]]; then
+		uv sync
+		if [[ ! -d $venv_dir ]]; then
 			echo "von: Failed to create the virtual environment."
 			return
 		fi
@@ -238,7 +237,7 @@ function check-venv() {
 
 	# Check if there is a virtual environment for this project.
 	if [[ -f "pyproject.toml" ]]; then
-		local venv_dir=$(poetry env info --path 2>/dev/null)
+		local venv_dir="$PWD/.venv"
 		if [[ -d $venv_dir ]]; then
 			echo "check-venv: There is a virtual environment for this project. Activating it now."
 			von $venv_dir
@@ -268,4 +267,3 @@ if [[ -n $VIRTUAL_ENV && -d "$VIRTUAL_ENV/bin" ]]; then
 else
 	normal-path
 fi
-
