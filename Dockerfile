@@ -17,7 +17,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 		curl wget git sudo jq nano man \
 		make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
 		xz-utils tk-dev libffi-dev liblzma-dev libxml2-dev libxmlsec1-dev \
-		libsqlite3-dev libncurses5-dev libncursesw5-dev \
+		libsqlite3-dev libncurses5-dev libncursesw5-dev librsvg2-bin \
 		rsync graphviz dnsutils gettext sqlite3 sqlite3-doc && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -34,7 +34,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL=${XDG_
 	${XDG_BIN_HOME}/uv python install ${PYTHON_VERSION} && \
 	${XDG_BIN_HOME}/uv venv ${WORKSPACE_PYTHON_DIR} && \
 	${XDG_BIN_HOME}/uv pip install --python ${WORKSPACE_PYTHON_DIR} --upgrade pip setuptools wheel \
-	tomlkit mypy pylint black pytest deepmerge pyYAML types-PyYAML && \
+	tomlkit mypy pylint black pytest deepmerge pyYAML types-PyYAML pillow cairosvg && \
 	chown -R vscode:vscode ${XDG_HOME} && \
 	rm -rf /tmp/* /var/tmp/*
 
