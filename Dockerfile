@@ -69,7 +69,7 @@ RUN mkdir -p ${NVM_DIR} && \
 	chown -R root:root /root/.config/pnpm && \
 	rm -rf /tmp/* /var/tmp/*
 
-# Install Google Cloud SDK and Cloud Storage FUSE.
+# Install Google Cloud CLI (formerly google-cloud-sdk) and Cloud Storage FUSE.
 RUN mkdir -p /etc/apt/keyrings && \
 	curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /etc/apt/keyrings/cloud.google.gpg && \
 	export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s` && \
@@ -77,7 +77,7 @@ RUN mkdir -p /etc/apt/keyrings && \
 	echo "deb [signed-by=/etc/apt/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee /etc/apt/sources.list.d/google-cloud-sdk.list && \
 	export DEBIAN_FRONTEND=noninteractive && \
 	apt-get update && \
-	apt-get -y install --no-install-recommends google-cloud-sdk fuse gcsfuse && \
+	apt-get -y install --no-install-recommends google-cloud-cli fuse gcsfuse && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
