@@ -6,10 +6,18 @@ if [[ ! -z $CODESPACE_VSCODE_FOLDER ]]; then
 elif [[ ! -z $GITHUB_WORKSPACE ]]; then
 	git config --global --add safe.directory $GITHUB_WORKSPACE
 	export REPO_ROOT="$GITHUB_WORKSPACE"
+elif [[ ! -z $DEVCONTAINER_WORKSPACE_FOLDER ]]; then
+	# From devcontainer.json containerEnv; hosts like Coder have no variable of their own.
+	export REPO_ROOT="$DEVCONTAINER_WORKSPACE_FOLDER"
 else
-	export REPO_ROOT="$(git rev-parse --show-toplevel)"
+	export REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 fi
-export WORKSPACE_ROOT="$(dirname $REPO_ROOT)"
+if [[ -n $REPO_ROOT ]]; then
+	export WORKSPACE_ROOT="$(dirname "$REPO_ROOT")"
+else
+	# Not in a repo (e.g. a shell started in $HOME); keep caches somewhere writable.
+	export WORKSPACE_ROOT="$HOME"
+fi
 
 # Host-provided environment (e.g. secrets written by a Coder template). Absent on Codespaces.
 if [[ -f "$REPO_ROOT/.coder-env.sh" ]]; then
