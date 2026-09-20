@@ -19,10 +19,14 @@ else
 	export WORKSPACE_ROOT="$HOME"
 fi
 
-# Host-provided environment (e.g. secrets written by a Coder template). Lives inside .git so it
-# is never part of the working tree. Absent on Codespaces.
+# Host-provided environment. Absent on Codespaces and in CI.
+#   .git/coder-env.sh    project secrets, written by the Coder template before the container starts
+#   ~/.coder-git-env.sh  Coder's Git auth (GIT_SSH_COMMAND etc.), written by the Coder sub-agent
 if [[ -f "$REPO_ROOT/.git/coder-env.sh" ]]; then
 	source "$REPO_ROOT/.git/coder-env.sh"
+fi
+if [[ -f "$HOME/.coder-git-env.sh" ]]; then
+	source "$HOME/.coder-git-env.sh"
 fi
 
 # Try to figure out the current Git branch.
