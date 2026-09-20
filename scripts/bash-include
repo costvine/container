@@ -11,6 +11,11 @@ else
 fi
 export WORKSPACE_ROOT="$(dirname $REPO_ROOT)"
 
+# Host-provided environment (e.g. secrets written by a Coder template). Absent on Codespaces.
+if [[ -f "$REPO_ROOT/.coder-env.sh" ]]; then
+	source "$REPO_ROOT/.coder-env.sh"
+fi
+
 # Try to figure out the current Git branch.
 if [[ ! -z $GITHUB_BASE_REF ]]; then
 	export GIT_BRANCH="$GITHUB_BASE_REF"

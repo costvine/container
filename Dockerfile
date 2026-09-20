@@ -105,5 +105,9 @@ RUN chown vscode:vscode ${XDG_BIN_HOME}/bash-include && \
 	cp -f /root/.bashrc.orig /root/.bashrc && \
 	echo "source $XDG_BIN_HOME/bash-include" >>/root/.bashrc
 
+# Codespaces mounts a vscode-owned volume at /workspaces; other hosts (e.g. Coder) only bind-mount
+# the repo beneath it, leaving a root-owned parent that setup-workspace cannot write to.
+RUN mkdir -p /workspaces && chown vscode:root /workspaces && chmod 775 /workspaces
+
 # Try to get non-interactive shells to set up the environment as well.
 ENV BASH_ENV=${XDG_BIN_HOME}/bash-include
