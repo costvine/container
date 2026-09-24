@@ -273,6 +273,7 @@ function check-venv() {
 	fi
 
 	# Check if there is a virtual environment for this project.
+	# The script 'venv-location' must be provided in the target environment.
 	if [[ -f "pyproject.toml" ]]; then
 		local venv_dir=$(venv-location 2>/dev/null)
 		if [[ -d $venv_dir ]]; then

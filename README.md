@@ -16,7 +16,6 @@ In addition to everything installed in the base image, this container includes:
 
 - Astral's Python installer/package manager, uv
 - Python
-- Poetry
 - Node Version Manager (nvm)
 - NodeJS (node) and the Node Package Manager (npm)
 - PNPM
