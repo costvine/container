@@ -35,7 +35,7 @@ if [[ ! -z $GITHUB_BASE_REF ]]; then
 elif [[ ! -z $GITHUB_REF_NAME ]]; then
 	export GIT_BRANCH="$GITHUB_REF_NAME"
 else
-	export GIT_BRANCH="$(git branch --show-current)"
+	export GIT_BRANCH="$(git -C "$REPO_ROOT" branch --show-current)"
 fi
 
 # Try to figure out the Git username and email.
