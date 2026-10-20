@@ -22,6 +22,19 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Github CLI installation.
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    mkdir -p -m 755 /etc/apt/keyrings && \
+    out=$(mktemp) && \
+    wget -nv -O "$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg && \
+    install -m 644 "$out" /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+    mkdir -p -m 755 /etc/apt/sources.list.d && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" >/etc/apt/sources.list.d/github-cli.list && \
+    apt-get update && \
+    apt-get -y install --no-install-recommends gh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # Save /root/.bashrc so we can restore it later.
 RUN cp -f /root/.bashrc /root/.bashrc.orig
 
