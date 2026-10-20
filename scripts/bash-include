@@ -127,26 +127,48 @@ function venv-path() {
 export -f venv-path
 
 function sync-dotfiles() {
-	shopt -s dotglob
+	# Assemble the final file set in a staging directory, then copy only files whose
+	# content differs, so unchanged files aren't rewritten (which triggers VS Code watchers).
+	local staging
+	if ! staging="$(mktemp -d)"; then
+		echo "sync-dotfiles: Error: could not create a temporary directory; dotfiles not installed"
+		return 1
+	fi
 
-	echo "sync-dotfiles: Installing dotfiles"
+	local sources=()
 	if [[ -d "$REPO_ROOT/node_modules/@costvine/tools/dotfiles" ]]; then
-	    cp -rf "$REPO_ROOT/node_modules/@costvine/tools/dotfiles/"* "$REPO_ROOT/"
+		echo "sync-dotfiles: Installing dotfiles from node_modules/@costvine/tools"
+		sources+=("$REPO_ROOT/node_modules/@costvine/tools/dotfiles")
+	elif [[ -d "$REPO_ROOT/packages/tools/dotfiles" ]]; then
+		echo "sync-dotfiles: Installing dotfiles from packages/tools"
+		sources+=("$REPO_ROOT/packages/tools/dotfiles")
 	else
-	    cp -rf "$REPO_ROOT/packages/tools/dotfiles/"* "$REPO_ROOT/"
+		echo "sync-dotfiles: Warning: no framework dotfiles found in node_modules/@costvine/tools or packages/tools"
 	fi
 
 	if [[ -d "$REPO_ROOT/packages/local/dotfiles" ]]; then
-		echo "sync-dotfiles: Installing local dotfiles"
-		cp -rf "$REPO_ROOT/packages/local/dotfiles/"* "$REPO_ROOT/"
+		echo "sync-dotfiles: Installing local dotfiles from packages/local"
+		sources+=("$REPO_ROOT/packages/local/dotfiles")
+	else
+		echo "sync-dotfiles: Warning: no local dotfiles found in packages/local"
 	fi
 
-	mv -f "$REPO_ROOT/gitavoid" "$REPO_ROOT/.gitignore"
-	mv -f "$REPO_ROOT/tsconfig-dot-json.json" "$REPO_ROOT/tsconfig.json"
-	mv -f "$REPO_ROOT/dot-npmrc" "$REPO_ROOT/.npmrc"
+	local src
+	for src in "${sources[@]}"; do
+		cp -rf "$src/." "$staging/"
 
-	shopt -u dotglob
-	chmod +x "$REPO_ROOT/scripts/"*
+		# Rename after each copy so a later source overrides an earlier one under either name.
+		[[ -e "$staging/gitavoid" ]] && mv -f "$staging/gitavoid" "$staging/.gitignore"
+		[[ -e "$staging/tsconfig-dot-json.json" ]] && mv -f "$staging/tsconfig-dot-json.json" "$staging/tsconfig.json"
+		[[ -e "$staging/dot-npmrc" ]] && mv -f "$staging/dot-npmrc" "$staging/.npmrc"
+	done
+
+	rsync -rl --checksum "$staging/" "$REPO_ROOT/"
+	rm -rf "$staging"
+
+	if [[ -d "$REPO_ROOT/scripts" ]]; then
+		chmod +x "$REPO_ROOT/scripts/"*
+	fi
 }
 export -f sync-dotfiles
 
